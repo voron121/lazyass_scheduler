@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  server:
+    container_name: lazyass_scheduler_app
+    build: docker/app
+    restart: always
+    working_dir: /var/www/app.loc
+    extra_hosts:
+      - app.loc:127.0.0.1
+    volumes:
+      - ./public/:/var/www/app.loc
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT}
+    ports:
+      - 8080:80
+    networks:
+      default:
+        aliases:
+          - app_network
+
+  memcached:
+    container_name: lazyass_scheduler_memcached
+    restart: unless-stopped
+    image: bitnami/memcached:1.6.20
+    ports:
+      - 11212:11211
+    networks:
+      default:
+        aliases:
+          - app_network
+
+  mysql:
+    container_name: lazyass_scheduler_storage
+    image: mariadb:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: storage_password
+      MYSQL_DATABASE: storage
+      MYSQL_USER: storage_user
+      MYSQL_PASSWORD: storage_password
+    volumes:
+      - ./docker/app/mysql:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      default:
+        aliases:
+          - app_network
+
+networks:
+  default:
+    external:
+      name: app_network
